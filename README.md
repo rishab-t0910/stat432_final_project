@@ -17,3 +17,12 @@ Trimmed down the number of predictors and scaled the inputs. It seems like a bet
 ##### Next Steps
 1. Cluster analysis to see if 3 classes are correct for life expectancy
 2. Move on the Random Forest
+
+### 9 April 2024
+I learned today that Clustering (K-means) is an unsupervised learning method, hence there is no way to determine the optimal number of clusters. So, there is no way to tell if 3 classes is the ideal, but since it is easy to interpret, I stick with it. I conducted the Random Forest, and the results are quite good. Low MSE and MAPE for both the training and testing data shows that the model does a good job. 
+
+I brought back the variables with low variance as I thought it would be useful, and the results do improve. 
+
+##### Next Steps
+1. Since this is a class taught in R, I will try to replicate this modelling in R
+2. Find an updated dataset with the current year data, and try to validate the model
