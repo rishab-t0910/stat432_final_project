@@ -24,5 +24,4 @@ I learned today that Clustering (K-means) is an unsupervised learning method, he
 I brought back the variables with low variance as I thought it would be useful, and the results do improve. 
 
 ##### Next Steps
-1. Since this is a class taught in R, I will try to replicate this modelling in R
-2. Find an updated dataset with the current year data, and try to validate the model
+1. Find an updated dataset with the current year data, and try to validate the model
