@@ -1,0 +1,64 @@
+---
+title: "Final Project"
+author: "Rishab Tirupathi"
+date: "2024-04-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+data_raw = read.csv("Life Expectancy Data.csv")
+head(data_raw)
+```
+
+### Constructing the Random Forest
+
+```{r}
+set.seed(7)
+library(rpart)
+predictors = c('Adult.Mortality', 'Alcohol', 'BMI', 'Polio', 'Diphtheria',
+               'HIV.AIDS', 'GDP', 'thinness..1.19.years', 'thinness.5.9.years',
+               'Income.composition.of.resources', 'Schooling', 'Status.num')
+response = "Life.expectancy"
+
+data_raw$Status.num = ifelse(data_raw$Status == 'Developing', 0, 1)
+data_modelling = data_raw
+data_modelling = na.omit(data_modelling)
+
+train_id = sample(1:nrow(data_modelling), 0.8 * nrow(data_modelling))
+train = data_modelling[train_id,]
+test = data_modelling[-train_id,]
+
+rf_model <- rpart(
+  formula = as.formula(paste(response, "~", paste(predictors, collapse = "+"))),
+  data = train)
+
+rf_model$variable.importance/max(rf_model$variable.importance)
+```
+
+### Checking the quality of the model
+```{r}
+set.seed(7)
+train_pred = predict(rf_model, train)
+test_pred = predict(rf_model, test)
+
+train_pred_df = data.frame(Country = train$Country, Year = train$Year, 
+                           Predicted = train_pred, Actual = train$Life.expectancy)
+test_pred_df = data.frame(Country = test$Country, Year = test$Year,
+                          Predicted = test_pred, Actual = test$Life.expectancy)
+train_pred_df
+test_pred_df
+
+cat("Train MSE = ", mean((train_pred_df$Predicted - train_pred_df$Actual)**2))
+cat("Test MSE = ", mean((test_pred_df$Predicted - test_pred_df$Actual)**2))
+```
+
+### Plotting the tree
+
+```{r}
+set.seed(7)
+library(rpart.plot)
+rpart.plot(rf_model)
+```
+

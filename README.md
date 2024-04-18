@@ -25,3 +25,6 @@ I brought back the variables with low variance as I thought it would be useful, 
 
 ##### Next Steps
 1. Find an updated dataset with the current year data, and try to validate the model
+
+### 18 April 2024
+I worked on the random forest model, and considered cutting down the size of it. I tried to output the picture of the forest but python isn't very good at that so I moved to R. I will be uploading the R markdown file as well. 
