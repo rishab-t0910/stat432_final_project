@@ -9,32 +9,50 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
 data_raw = read.csv("Life Expectancy Data.csv")
+```
+
+```{r}
 head(data_raw)
 ```
 
 ### Constructing the Random Forest
 
-```{r}
+```{r, warning = F}
 set.seed(7)
 library(rpart)
-predictors = c('Adult.Mortality', 'Alcohol', 'BMI', 'Polio', 'Diphtheria',
-               'HIV.AIDS', 'GDP', 'thinness..1.19.years', 'thinness.5.9.years',
-               'Income.composition.of.resources', 'Schooling', 'Status.num')
+
+## Encode status
+data_raw$Status.num = ifelse(data_raw$Status == 'Developing', 0, 1)
+
+## Encode countries
+unique_countries = unique(data_raw$Country)
+country_encoding = as.numeric(factor(unique_countries))
+country_mapping = setNames(country_encoding, unique_countries)
+data_raw$Country_num = country_mapping[data_raw$Country]
+
+# predictors = c(names(data_raw))
+# predictors = predictors[!predictors %in% c("Life.expectancy", "Country", "Status")]
+
+## Top 5 most useful when conducting RF with all variables
+
+predictors = c("Income.composition.of.resources", "Schooling", "HIV.AIDS", 
+               "Adult.Mortality", "thinness.1.19.years") 
 response = "Life.expectancy"
 
-data_raw$Status.num = ifelse(data_raw$Status == 'Developing', 0, 1)
 data_modelling = data_raw
 data_modelling = na.omit(data_modelling)
 
 train_id = sample(1:nrow(data_modelling), 0.8 * nrow(data_modelling))
-train = data_modelling[train_id,]
+train = data_modelling[train_id, ]
 test = data_modelling[-train_id,]
 
 rf_model <- rpart(
   formula = as.formula(paste(response, "~", paste(predictors, collapse = "+"))),
   data = train)
 
-rf_model$variable.importance/max(rf_model$variable.importance)
+var_imp = rf_model$variable.importance
+var_imp = round(var_imp[order(var_imp, decreasing = T)]/max(var_imp), 3)
+var_imp = var_imp[1:5]
 ```
 
 ### Checking the quality of the model
