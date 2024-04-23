@@ -31,3 +31,6 @@ I worked on the random forest model, and considered cutting down the size of it.
 
 ### 22 April 2024
 I realized that the Random Forest implementation is not easy in Python especially with visualization. However, the R implementation is very good. So I copied the data files, used the same training and testing data and redid the random forest in R, and removed it from Python. Lastly, I looked to prune the Random forest I constructed but that was the same as the original random forest. I also included a plot of the variable importance. 
+
+##### Next Steps
+1. Use various cutoff points for the Logistic Regression model
