@@ -8,7 +8,11 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
-data_raw = read.csv("Life Expectancy Data.csv")
+data_raw = read.csv("Interpolated WHO Data.csv")
+data_raw = data_raw[, !names(data_raw) %in% c("X", "Colour")]
+library(zoo)
+library(reshape2)
+library(ggplot2)
 ```
 
 ```{r}
@@ -17,54 +21,45 @@ head(data_raw)
 
 ### Constructing the Random Forest
 
-```{r, warning = F}
-set.seed(7)
+```{r, warning = F, fig.width=10}
+set.seed(9)
 library(rpart)
-
-## Encode status
-data_raw$Status.num = ifelse(data_raw$Status == 'Developing', 0, 1)
-
-## Encode countries
-unique_countries = unique(data_raw$Country)
-country_encoding = as.numeric(factor(unique_countries))
-country_mapping = setNames(country_encoding, unique_countries)
-data_raw$Country_num = country_mapping[data_raw$Country]
-
-# predictors = c(names(data_raw))
-# predictors = predictors[!predictors %in% c("Life.expectancy", "Country", "Status")]
+predictors = c(names(data_raw))
+predictors = predictors[!predictors %in% c("Life.expectancy", "Country", "Status")]
 
 ## Top 5 most useful when conducting RF with all variables
 
-predictors = c("Income.composition.of.resources", "Schooling", "HIV.AIDS", 
-               "Adult.Mortality", "thinness.1.19.years") 
+predictors = c("HIV.AIDS", "Adult.Mortality", "Income.composition.of.resources", 
+               "Schooling")
 response = "Life.expectancy"
 
-data_modelling = data_raw
-data_modelling = na.omit(data_modelling)
+train_data = read.csv("Training Data.csv")
+train = train_data[, c(response, predictors)]
 
-train_id = sample(1:nrow(data_modelling), 0.8 * nrow(data_modelling))
-train = data_modelling[train_id, ]
-test = data_modelling[-train_id,]
+test_data = read.csv("Testing Data.csv")
+test = test_data[, c(response, predictors)]
 
 rf_model <- rpart(
   formula = as.formula(paste(response, "~", paste(predictors, collapse = "+"))),
   data = train)
 
 var_imp = rf_model$variable.importance
-var_imp = round(var_imp[order(var_imp, decreasing = T)]/max(var_imp), 3)
-var_imp = var_imp[1:5]
+var_imp = round(var_imp[order(var_imp, decreasing = T)]/sum(var_imp), 3)
+barplot(var_imp, col = c('darkred', 'darkblue', 'darkgreen', 'purple'), 
+        xlab = 'Variables', ylab = 'Percent Importance', 
+        main = 'Variable importance')
 ```
 
 ### Checking the quality of the model
 ```{r}
-set.seed(7)
+set.seed(9)
 train_pred = predict(rf_model, train)
 test_pred = predict(rf_model, test)
 
-train_pred_df = data.frame(Country = train$Country, Year = train$Year, 
-                           Predicted = train_pred, Actual = train$Life.expectancy)
-test_pred_df = data.frame(Country = test$Country, Year = test$Year,
-                          Predicted = test_pred, Actual = test$Life.expectancy)
+train_pred_df = data.frame(Country = train_data$Country, Year = train_data$Year, 
+                           Predicted = train_pred, Actual = train_data$Life.expectancy)
+test_pred_df = data.frame(Country = test_data$Country, Year = test_data$Year,
+                          Predicted = test_pred, Actual = test_data$Life.expectancy)
 train_pred_df
 test_pred_df
 
@@ -75,8 +70,17 @@ cat("Test MSE = ", mean((test_pred_df$Predicted - test_pred_df$Actual)**2))
 ### Plotting the tree
 
 ```{r}
-set.seed(7)
+set.seed(9)
 library(rpart.plot)
 rpart.plot(rf_model)
+```
+
+### Prune the tree
+- Result is the same tree
+
+```{r}
+set.seed(9)
+optimal_tree = prune(rf_model, cp = rf_model$cptable[which.min(rf_model$cptable[, "xerror"]), "CP"])
+rpart.plot(optimal_tree)
 ```
 
