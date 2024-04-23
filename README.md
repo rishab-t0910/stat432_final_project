@@ -12,7 +12,7 @@ Created the Github repo with the files. Finished the initial logistic regression
 2. Calculate sensitivity and specificity
 
 ### 6 April 2024
-Trimmed down the number of predictors and scaled the inputs. It seems like a better model now. Calculated the accuracy scores, and also checked the quality of the model against the training data. Again, could be better but we are moving in the right direction. 
+Trimmed down the number of predictors and scaled the inputs. It seems like a better model now. Calculated the accuracy scores, and also checked the quality of the model against the training data. Got the testing error down to 16.5%. The model could be better but we are moving in the right direction. 
 
 ##### Next Steps
 1. Cluster analysis to see if 3 classes are correct for life expectancy
