@@ -33,4 +33,8 @@ I worked on the random forest model, and considered cutting down the size of it.
 I realized that the Random Forest implementation is not easy in Python especially with visualization. However, the R implementation is very good. So I copied the data files, used the same training and testing data and redid the random forest in R, and removed it from Python. Lastly, I looked to prune the Random forest I constructed but that was the same as the original random forest. I also included a plot of the variable importance. 
 
 ##### Next Steps
-1. Use various cutoff points for the Logistic Regression model
+1. Consider encoding the choice of class as follows
+    - Take the average of the probabilities
+    - Figure out the percentage of high, low, medium from the original df (eg 60-20-20)
+    - Then create the cutoff value based on that
+    - See if this changes the confusion matrix
