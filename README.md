@@ -41,3 +41,9 @@ I realized that the Random Forest implementation is not easy in Python especiall
 
 ### 25 April 2024
 Changing the cutoffs sparked a new thought - what if we changed the way we encode "high", "low", "medium". So after tinkering this and trying 2 classes instead of 3, we get some new results. For 2 classes, we check multiple splits and multiple cutoffs, and finalise that our best model is when we have a 0.3-0.7 high-low split with a 0.5 cutoff. 
+
+### 27 April 2024
+Started writing the report for the class, and did the following
+1. Included a images and data folder to clean up the file system
+2. Included the logistic regression equation
+3. Created random forest with multiple parameters

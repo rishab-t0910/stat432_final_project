@@ -8,12 +8,17 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
-data_raw = read.csv("Interpolated WHO Data.csv")
+path = "/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project"
+data_path =  paste(path, "/Data/", sep = '')
+image_path = paste(path, "/Images/", sep = '')
+
+data_raw = read.csv(paste(data_path, "Interpolated WHO Data.csv", sep = ''))
 data_raw = data_raw[, !names(data_raw) %in% c("X", "Colour")]
-train_data = read.csv("Training Data.csv")
+
+train_data = read.csv(paste(data_path, "Training Data.csv", sep = ''))
 train_data = train_data[, !names(train_data) %in% c('Country', 'Status', 'Colour', "X")]
 
-test_data = read.csv("Testing Data.csv")
+test_data = read.csv(paste(data_path, "Testing Data.csv", sep = ''))
 test_data = test_data[, !names(test_data) %in% c('Country', 'Status', 'Colour', "X")]
 
 library(zoo)
@@ -39,10 +44,10 @@ predictors = c("HIV.AIDS", "Adult.Mortality", "Income.composition.of.resources",
                "Schooling", "BMI")
 response = "Life.expectancy"
 
-train_data = read.csv("Training Data.csv")
+train_data = read.csv(paste(data_path, "Training Data.csv", sep = ''))
 train = train_data[, c(response, predictors)]
 
-test_data = read.csv("Testing Data.csv")
+test_data = read.csv(paste(data_path, "Testing Data.csv", sep = ''))
 test = test_data[, c(response, predictors)]
 
 rf_model <- rpart(
@@ -51,11 +56,11 @@ rf_model <- rpart(
 
 var_imp = rf_model$variable.importance
 var_imp = round(var_imp[order(var_imp, decreasing = T)]/sum(var_imp), 3)
-# png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/variable importance.png")
+png(file = paste(image_path, "Variable Importance.png", sep = ''))
 barplot(var_imp, col = c('darkred', 'darkblue', 'darkgreen', 'purple', "orange"), 
         xlab = 'Variables', ylab = 'Percent Importance', 
         main = 'Variable importance')
-# dev.off()
+dev.off()
 ```
 
 ### Checking the quality of the model
@@ -80,9 +85,9 @@ cat("Test MSE = ", mean((test_pred_df$Predicted - test_pred_df$Actual)**2))
 ```{r}
 set.seed(9)
 library(rpart.plot)
-# png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/Full Tree.png")
+png(file = paste(image_path, "Full Tree.png", sep = ''))
 rpart.plot(rf_model)
-# dev.off()
+dev.off()
 ```
 
 ### Prune the tree
@@ -92,7 +97,7 @@ rpart.plot(rf_model)
 set.seed(9)
 optimal_tree = prune(rf_model, cp = rf_model$cptable[which.min(rf_model$cptable[, "xerror"]), "CP"])
 
-png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/Pruned Tree.png")
+png(file = paste(image_path, "Pruned Tree.png", sep = ''))
 rpart.plot(optimal_tree)
 dev.off()
 ```
@@ -103,11 +108,11 @@ dev.off()
 set.seed(9)
 library(randomForestSRC)
 
-train_data = read.csv("Training Data.csv")
+train_data = read.csv(paste(data_path, "Training Data.csv", sep = ''))
 rf_src_train = train_data[, !names(train_data) %in% c("X", 'Country', 'Status', 'Colour', 
 "X", "Life.expectancy.category")]
 
-test_data = read.csv("Testing Data.csv")
+test_data = read.csv(paste(data_path, "Testing Data.csv", sep = ''))
 rf_src_test = test_data[, !names(test_data) %in% c("X", 'Country', 'Status', 'Colour', 
 "X", "Life.expectancy.category")]
 
@@ -203,7 +208,7 @@ for(i in rownames(best_var_imp_df)){
   }
 }
 
-png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/Best RF variable importance.png")
+png(file = paste(image_path, "Best RF Variable Importance.png", sep = ''))
 barplot(best_var_imp_df$best_var_imp, col = best_var_imp_df$Color,
         xlab = 'Variables', ylab = 'Percent Importance', names.arg = rownames(best_var_imp_df),
         main = 'Variable importance')
