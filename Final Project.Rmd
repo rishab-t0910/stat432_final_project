@@ -10,6 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
 data_raw = read.csv("Interpolated WHO Data.csv")
 data_raw = data_raw[, !names(data_raw) %in% c("X", "Colour")]
+train_data = read.csv("Training Data.csv")
+train_data = train_data[, !names(train_data) %in% c('Country', 'Status', 'Colour', "X")]
+
+test_data = read.csv("Testing Data.csv")
+test_data = test_data[, !names(test_data) %in% c('Country', 'Status', 'Colour', "X")]
+
 library(zoo)
 library(reshape2)
 library(ggplot2)
@@ -21,7 +27,7 @@ head(data_raw)
 
 ### Constructing the Random Forest
 
-```{r, warning = F, fig.width=10}
+```{r, warning = F}
 set.seed(9)
 library(rpart)
 predictors = c(names(data_raw))
@@ -29,8 +35,8 @@ predictors = predictors[!predictors %in% c("Life.expectancy", "Country", "Status
 
 ## Top 5 most useful when conducting RF with all variables
 
-predictors = c("HIV.AIDS", "Adult.Mortality", "Income.composition.of.resources", 
-               "Schooling")
+predictors = c("HIV.AIDS", "Adult.Mortality", "Income.composition.of.resources",
+               "Schooling", "BMI")
 response = "Life.expectancy"
 
 train_data = read.csv("Training Data.csv")
@@ -45,9 +51,11 @@ rf_model <- rpart(
 
 var_imp = rf_model$variable.importance
 var_imp = round(var_imp[order(var_imp, decreasing = T)]/sum(var_imp), 3)
-barplot(var_imp, col = c('darkred', 'darkblue', 'darkgreen', 'purple'), 
+# png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/variable importance.png")
+barplot(var_imp, col = c('darkred', 'darkblue', 'darkgreen', 'purple', "orange"), 
         xlab = 'Variables', ylab = 'Percent Importance', 
         main = 'Variable importance')
+# dev.off()
 ```
 
 ### Checking the quality of the model
@@ -72,7 +80,9 @@ cat("Test MSE = ", mean((test_pred_df$Predicted - test_pred_df$Actual)**2))
 ```{r}
 set.seed(9)
 library(rpart.plot)
+# png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/Full Tree.png")
 rpart.plot(rf_model)
+# dev.off()
 ```
 
 ### Prune the tree
@@ -81,6 +91,125 @@ rpart.plot(rf_model)
 ```{r}
 set.seed(9)
 optimal_tree = prune(rf_model, cp = rf_model$cptable[which.min(rf_model$cptable[, "xerror"]), "CP"])
+
+png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/Pruned Tree.png")
 rpart.plot(optimal_tree)
+dev.off()
+```
+
+## Use RSFRC
+
+```{r}
+set.seed(9)
+library(randomForestSRC)
+
+train_data = read.csv("Training Data.csv")
+rf_src_train = train_data[, !names(train_data) %in% c("X", 'Country', 'Status', 'Colour', 
+"X", "Life.expectancy.category")]
+
+test_data = read.csv("Testing Data.csv")
+rf_src_test = test_data[, !names(test_data) %in% c("X", 'Country', 'Status', 'Colour', 
+"X", "Life.expectancy.category")]
+
+response = 'Life.expectancy'
+predictors = names(rf_src_train)
+
+n_trees = c(50, 100, 200, 500)
+num_vars = c(3, 5, 11, length(predictors))
+min_term_size = c(3, 5)
+random_splits = c(5, 9)
+
+results = data.frame(
+  n_trees = numeric(), 
+  num_vars = numeric(), 
+  min_term_size = numeric(), 
+  random_splits = numeric(), 
+  oob_error = numeric()
+)
+
+for (nt in n_trees){
+  for(mt in num_vars){
+    for(ns in min_term_size){
+        for(n_rand_split in random_splits){
+          rf = rfsrc(formula = Life.expectancy ~., 
+                     data = rf_src_train, ntree = nt,
+                  mtry = mt, nodesize = ns, nsplit = n_rand_split)
+          oob_err = rf$err.rate[length(rf$err.rate)]
+          results = rbind(results, list(nt, mt, ns, n_rand_split, oob_err))
+        }
+      }
+    }
+}
+colnames(results) = c("n_trees", 'mtry', 'nodesize',
+                      'nsplit', 'oob_error')
+lowest_error = results[which.min(results$oob_error), ]
+print("Best Configuration")
+print(lowest_error)
+
+best_rf = rfsrc(formula = Life.expectancy ~.,
+                data = rf_src_train,
+                ntree = lowest_error$n_trees, 
+                mtry = lowest_error$mtry, 
+                nodesize = lowest_error$nodesize, 
+                splitrule = lowest_error$splitrule, 
+                nsplit = lowest_error$nsplit, 
+                importance = TRUE)
+```
+### Show the best results from the model
+```{r}
+set.seed(9)
+library(dplyr)
+ordered_data <- results %>%
+  arrange(oob_error)
+ordered_data[1:5, ]
+```
+
+
+```{r}
+set.seed(9)
+best_train_pred = predict(best_rf, rf_src_train)
+best_test_pred = predict(best_rf, rf_src_test)
+
+best_train_pred_df = data.frame(Country = rf_src_train$Country, Year = rf_src_train$Year, 
+                           Predicted = best_train_pred$predicted, Actual = rf_src_train$Life.expectancy)
+best_test_pred_df = data.frame(Country = rf_src_test$Country, Year = rf_src_test$Year,
+                          Predicted = best_test_pred$predicted, Actual = rf_src_test$Life.expectancy)
+best_train_pred_df
+best_test_pred_df
+
+cat("Train MSE = ", mean((best_train_pred_df$Predicted - best_train_pred_df$Actual)**2))
+cat("Test MSE = ", mean((best_test_pred_df$Predicted - best_test_pred_df$Actual)**2))
+
+best_var_imp = best_rf$importance
+best_var_imp = round(best_var_imp[order(best_var_imp, decreasing = T)]/sum(best_var_imp), 3)
+best_var_imp_df = data.frame(best_var_imp)
+best_var_imp_df$Color = c("grey")
+
+for(i in rownames(best_var_imp_df)){
+  if(i == "HIV.AIDS"){
+    best_var_imp_df[i, "Color"] = 'darkred'
+  }
+  else if(i == "Adult.Mortality"){
+    best_var_imp_df[i, "Color"] = 'darkblue'
+  }
+  else if(i == "Income.composition.of.resources"){
+    best_var_imp_df[i, "Color"] = 'darkgreen'
+  }
+  else if(i == "Schooling"){
+    best_var_imp_df[i, "Color"] = 'purple'
+  }
+  else if(i == "BMI"){
+    best_var_imp_df[i, "Color"] = 'orange'
+  }
+}
+
+png(file="/Users/rishabtirupathi/Desktop/UIUC/Spring 2024/STAT 432/Final Project/Best RF variable importance.png")
+barplot(best_var_imp_df$best_var_imp, col = best_var_imp_df$Color,
+        xlab = 'Variables', ylab = 'Percent Importance', names.arg = rownames(best_var_imp_df),
+        main = 'Variable importance')
+dev.off()
+
+plot(best_rf)
+best_var_imp_df
 ```
 
