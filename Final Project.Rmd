@@ -182,6 +182,12 @@ best_test_pred_df = data.frame(Country = rf_src_test$Country, Year = rf_src_test
 best_train_pred_df
 best_test_pred_df
 
+train_mape = mean(abs((best_train_pred_df$Predicted - best_train_pred_df$Actual)/abs(best_train_pred_df$Actual)))
+test_mape = mean(abs((best_test_pred_df$Predicted - best_test_pred_df$Actual)/abs(best_test_pred_df$Actual)))
+
+cat("Train MAPE = ", train_mape)
+cat("Test MAPE = ", test_mape)
+
 cat("Train MSE = ", mean((best_train_pred_df$Predicted - best_train_pred_df$Actual)**2))
 cat("Test MSE = ", mean((best_test_pred_df$Predicted - best_test_pred_df$Actual)**2))
 

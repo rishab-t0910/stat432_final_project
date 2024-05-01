@@ -47,3 +47,10 @@ Started writing the report for the class, and did the following
 1. Included a images and data folder to clean up the file system
 2. Included the logistic regression equation
 3. Created random forest with multiple parameters
+
+### 1 May 2024
+This brings me to the end of the semester and the project. It was quite interesting working with this dataset which did not have the best quality. I learned quite a lot in my modelling and found some very good results. 
+1. Logistic Regression - 2 class, 30-70 high-low split, 0.5 cutoff, Test Classification Error = 0.056
+2. Random Forest - Test MSE = 3.2212
+
+We can look to use other classification models, or other more complicated models for regression. The current models are good, and can definitely be used. Furthermore, better data would help make better models. 
